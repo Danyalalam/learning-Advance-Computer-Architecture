@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 1: Speedup, efficiency and Amdahl's law</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main>
+<nav class="course">
+  <span>ACA · Lesson 1 of 6 before the test</span>
+  <a href="0002-gustafson-barsis-ants-elephants.html">Lesson 2 →</a>
+  <a href="../reference/formula-sheet.html">Formula sheet</a>
+</nav>
+
+<p class="kicker">Slide set 1 · slides 11 to 14 and 28 to 30</p>
+<h1>Speedup, efficiency and Amdahl's law</h1>
+<p class="lede">After this lesson you can answer the most likely calculation question on the test: "how much faster does this program get on N CPUs?"</p>
+
+<h2>The setting</h2>
+<p>A <em>sequential</em> program runs on one CPU, one step after another. A <em>parallel</em> program splits its work across N CPUs (the slides also say cores or nodes) that run at the same time. You already do this: training on 4 GPUs instead of 1 is a parallel program.</p>
+<p>The course measures a parallel program with wall-clock time only. Counting steps or big-O "has little to no benefit" here. <a class="cite" href="../materials/ACA%202026W%2001%20Introduction.pdf#page=6">slide 1-11</a></p>
+
+<h2>Two numbers: speedup and efficiency</h2>
+<div class="formula">
+  <span class="label">Speedup · slide 1-11</span>
+  speedup = <span class="frac"><span>t<sub>seq</sub></span><span>t<sub>par</sub></span></span>
+</div>
+<p>t<sub>seq</sub> is the time of the sequential program, t<sub>par</sub> the time of the parallel one, both solving the same problem instance. Speedup tells you whether going parallel helped at all (speedup &gt; 1).</p>
+<div class="formula">
+  <span class="label">Efficiency · slide 1-14</span>
+  efficiency = <span class="frac"><span>speedup</span><span>N</span></span> = <span class="frac"><span>t<sub>seq</sub></span><span>N · t<sub>par</sub></span></span>
+</div>
+<p>Efficiency tells you what the speedup cost. Read it as the average share of time each CPU did useful work. If speedup = N, efficiency is 100%: that is <em>linear speedup</em>. <a class="cite" href="../materials/ACA%202026W%2001%20Introduction.pdf#page=7">slide 1-14</a></p>
+<div class="note"><strong>Fairness rule.</strong> t<sub>seq</sub> must come from the <em>fastest known</em> sequential program, run on the same hardware and software, not from the parallel program run on one CPU. Otherwise a slow baseline flatters your speedup. <a class="cite" href="../materials/ACA%202026W%2001%20Introduction.pdf#page=7">slide 1-13</a></div>
+
+<h2>Amdahl's law: the sequential part is the ceiling</h2>
+<p>Think of one training epoch that takes 100 s: 20 s of single-threaded data loading and 80 s of GPU compute. Add GPUs and the 80 s shrinks. The 20 s never does. Even with infinite GPUs the epoch takes 20 s, so you can never be more than 5 times faster.</p>
+<p>Amdahl made that argument general. Take a program that needs time T on one CPU. A fraction <strong>α</strong> of it can be parallelized; the remaining <strong>1 − α</strong> must stay sequential. On N CPUs, the parallel part takes αT / N and the sequential part still takes (1 − α)T.</p>
+<div class="formula">
+  <span class="label">Amdahl's law · slide 1-28</span>
+  speedup = <span class="frac"><span>T</span><span>(1 − α)T + αT / N</span></span> = <span class="frac"><span>1</span><span>(1 − α) + α / N</span></span>
+</div>
+<div class="formula">
+  <span class="label">With infinite CPUs · slide 1-29</span>
+  lim<sub>N → ∞</sub> speedup = <span class="frac"><span>1</span><span>1 − α</span></span>
+</div>
+<div class="note"><strong>Watch the notation.</strong> In these slides α is the <em>parallelizable</em> part. Exercises often give the sequential part instead ("20% must run sequentially"). Then α = 0.8, not 0.2. Many other textbooks define the symbol the other way round.</div>
+<p>The law assumes zero communication overhead and a parallel part that divides evenly among any number of CPUs, so it is an upper bound, not a prediction. <a class="cite" href="../materials/ACA%202026W%2001%20Introduction.pdf#page=14">slide 1-28</a></p>
+
+<h3>See it</h3>
+<p>Set α to 0.90 and drag N to 1024. The speedup stalls just under 10 while the efficiency collapses.</p>
+<div class="explorer" data-explorer="amdahl"></div>
+
+<h2>Practice</h2>
+<p>Use pen and paper, then type the answer. Decimals: two places are enough. Do not scroll back to the formulas unless you are stuck: recalling them from memory is what makes them stick.</p>
+
+<div class="q" data-type="num" data-answer="4" data-tol="0.01">
+  <p class="prompt">A sequential program takes 120 s. Its parallel version takes 30 s on 8 CPUs. What is the speedup?</p>
+  <div class="explain">speedup = t<sub>seq</sub> / t<sub>par</sub> = 120 / 30 = 4. The number of CPUs does not appear in the speedup.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="50" data-tol="0.5" data-show="50%">
+  <p class="prompt">Same program. What is its efficiency, in percent?</p>
+  <div class="explain">efficiency = speedup / N = 4 / 8 = 0.5, so 50%. On average each CPU did useful work half the time.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="2">
+  <p class="prompt">For a fair speedup figure, which program must t<sub>seq</sub> come from?</p>
+  <div class="options">
+    <button>The parallel code single-threaded</button>
+    <button>The fastest known sequential</button>
+    <button>The earliest written sequential</button>
+    <button>The simplest readable sequential</button>
+  </div>
+  <div class="explain">Slide 1-13: the sequential program should be the fastest known solution. A parallel program run on one CPU carries overhead that a good sequential program does not have, which would inflate the speedup.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="5.26" data-tol="0.02">
+  <p class="prompt">A program has α = 0.9. According to Amdahl's law, what is the speedup on N = 10 CPUs?</p>
+  <div class="explain">1 / ((1 − 0.9) + 0.9 / 10) = 1 / (0.1 + 0.09) = 1 / 0.19 ≈ 5.26. Ten CPUs, barely half of them paying off.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="3">
+  <p class="prompt">A program has α = 0.75. What does Amdahl's law predict as N grows without limit?</p>
+  <div class="options">
+    <button>Speedup approaches three</button>
+    <button>Speedup grows unbounded</button>
+    <button>Speedup approaches four</button>
+    <button>Speedup approaches seven</button>
+  </div>
+  <div class="explain">The limit is 1 / (1 − α) = 1 / 0.25 = 4. The sequential quarter of the program remains however many CPUs you add.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="2.5" data-tol="0.01">
+  <p class="prompt">The epoch from above: 100 s on one GPU, of which 20 s is sequential data loading. Under Amdahl's assumptions, what is the speedup on 4 GPUs?</p>
+  <div class="explain">The sequential part is 20%, so α = 0.8. speedup = 1 / (0.2 + 0.8 / 4) = 1 / 0.4 = 2.5. Check with times: 20 s + 80 s / 4 = 40 s, and 100 / 40 = 2.5.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="6" data-tol="0.01">
+  <p class="prompt">Barlas exercise 1.4: an application with a 20% part that must run sequentially is to be accelerated three-fold. How many CPUs are required?</p>
+  <div class="explain">α = 0.8. Solve 1 / (0.2 + 0.8 / N) = 3: then 0.2 + 0.8 / N = 1/3, so 0.8 / N = 0.1333 and N = 6.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="1">
+  <p class="prompt">Barlas exercise 1.4, second half: the same application should now reach a speedup of 5. How many CPUs are required?</p>
+  <div class="options">
+    <button>No finite number works</button>
+    <button>Exactly twelve CPUs needed</button>
+    <button>Exactly twenty CPUs needed</button>
+    <button>Exactly sixteen CPUs needed</button>
+  </div>
+  <div class="explain">The limit is 1 / (1 − α) = 1 / 0.2 = 5. Solving 0.2 + 0.8 / N = 0.2 gives 0.8 / N = 0, which no finite N satisfies. A speedup of 5 is only approached, never reached.</div>
+</div>
+
+<p class="score" data-quiz-score>0 of 0 answered.</p>
+
+<hr>
+<h2>Read next</h2>
+<p>Primary source: <a href="../materials/ACA%202026W%2001%20Introduction.pdf#page=6">slide set 1, slides 11 to 14</a> and <a href="../materials/ACA%202026W%2001%20Introduction.pdf#page=14">slides 28 to 30</a>. Look at the curves on slides 29 and 30 and explain to yourself why they flatten. For the full argument, read Barlas, chapter 1, the section on Amdahl's law.</p>
+<p>Every formula here is on the <a href="../reference/formula-sheet.html">formula sheet</a>.</p>
+<p><strong>Stuck or curious?</strong> Ask your teacher (the agent) in the chat. Tell it your score and which questions you missed, and it will pick the next lesson: Gustafson-Barsis' law and Task 1 of the exercise sheet.</p>
+</main>
+<script src="../assets/quiz.js"></script>
+<script src="../assets/speedup-explorer.js"></script>
+</body>
+</html>

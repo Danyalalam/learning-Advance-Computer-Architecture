@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 4: Mock test, slide sets 1 and 2</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main>
+<nav class="course">
+  <span>ACA · Lesson 4</span>
+  <a href="0003-exercise-sheet-tasks-2-3.html">← Lesson 3</a>
+  <a href="../reference/formula-sheet.html">Formula sheet</a>
+</nav>
+
+<p class="kicker">Mock test · slide sets 1 and 2 · about 30 minutes</p>
+<h1>Mock test</h1>
+<p class="lede">Twenty-four questions taken only from the slides and the seminar work, mixed together the way a real test mixes them. Treat it like the real thing: no formula sheet, pen and paper, one attempt per question.</p>
+<p>Every explanation cites its slide. Anything you miss tells you which slides to reread tonight.</p>
+
+<div class="q" data-type="mcq" data-answer="2">
+  <p class="prompt">In Flynn's taxonomy, which class does a GPU belong to at the level of a single Streaming Multiprocessor?</p>
+  <div class="options"><button>SISD</button><button>SIMD</button><button>MISD</button><button>MIMD</button></div>
+  <div class="explain">Slide 1-5: GPUs follow SIMD at the level of the SM (NVidia) or SIMD unit (AMD). As a whole, multicore machines including GPUs are MIMD.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="10.26" data-tol="0.02">
+  <p class="prompt">A sequential program is 95% parallelizable. According to Amdahl's law, what speedup does it reach on 20 CPUs?</p>
+  <div class="explain">1 / (0.05 + 0.95 / 20) = 1 / 0.0975 ≈ 10.26. Slide 1-28.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="3">
+  <p class="prompt">Which pair of properties does slide 1-7 give for GPUs, as opposed to CPUs?</p>
+  <div class="options">
+    <button>Large caches, repeated data use</button>
+    <button>Deep pipelines, branch prediction hardware</button>
+    <button>Small caches, data used once</button>
+    <button>Few cores, complex control logic</button>
+  </div>
+  <div class="explain">Slide 1-7: GPUs have small caches, single-time use of data, big data volume, simple program logic and simple ALUs. Large caches, decoding and prediction hardware, and pipelined execution describe CPUs.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="30.45" data-tol="0.02">
+  <p class="prompt">A parallel application on 32 CPUs spends 5% of its total time in sequential execution. What speedup does Gustafson-Barsis give?</p>
+  <div class="explain">α = 0.95: (1 − 0.95) + 32 · 0.95 = 0.05 + 30.4 = 30.45. The percentage is measured on the parallel run, so this is Gustafson-Barsis. Slide 1-34.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="125" data-tol="0.5" data-show="125%">
+  <p class="prompt">A sequential program takes 64 s. Its parallel version takes 6.4 s on 8 CPUs. What is the efficiency, in percent?</p>
+  <div class="explain">speedup = 64 / 6.4 = 10, efficiency = 10 / 8 = 1.25, so 125%. Speedup above N: this is super-linear speedup. Slides 1-14, 1-19.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="4">
+  <p class="prompt">DES brute force on 2 CPUs, keyspace split in half, secret key 2<sup>55</sup>. What is the efficiency, approximately?</p>
+  <div class="options"><button>exactly 0.5</button><button>exactly 1</button><button>about 2^55</button><button>about 2^54</button></div>
+  <div class="explain">The sequential search needs 2<sup>55</sup> + 1 attempts; the second CPU finds the key on its first. Speedup = 2<sup>55</sup> + 1, efficiency = (2<sup>55</sup> + 1) / 2 ≈ 2<sup>54</sup>. Slide 1-20.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="1" data-tol="0.01">
+  <p class="prompt">Same setup, but the secret key is 2. What is the speedup?</p>
+  <div class="explain">The key lies in the first CPU's half. Both the sequential program and the first CPU try keys 0, 1, 2: three attempts each. Speedup = 3T / 3T = 1. The second CPU contributes nothing. Slide 1-20 asks exactly this.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="80" data-tol="0.5" data-show="80%">
+  <p class="prompt">One CPU solves a problem in 10 s. Four CPUs solve a problem four times as big in 12.5 s. What is the weak scaling efficiency, in percent?</p>
+  <div class="explain">t<sub>seq</sub> / t′<sub>par</sub> = 10 / 12.5 = 0.8, so 80%. N does not appear in the formula: the problem already grew N times. Slide 1-22.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="1">
+  <p class="prompt">Which kind of scalability do the slides call the most challenging to improve?</p>
+  <div class="options"><button>Strong scaling efficiency</button><button>Weak scaling efficiency</button><button>Both are equally hard</button></div>
+  <div class="explain">Slide 1-23: strong scaling efficiency (fixed problem, more CPUs) is the one most challenging to improve. It is the same as plain efficiency.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="3">
+  <p class="prompt">According to the experimentation guidelines, how many threads should a multicore measurement use?</p>
+  <div class="options">
+    <button>Double the hardware core count</button>
+    <button>As many as the OS allows</button>
+    <button>At most the hardware core count</button>
+    <button>Match the logical hyperthread count</button>
+  </div>
+  <div class="explain">Slide 1-27: threads and processes should not exceed the number of available hardware cores. Disable hyperthreading.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="2">
+  <p class="prompt">Which profiling technique modifies the program's code, usually requiring recompilation?</p>
+  <div class="options"><button>Sampling</button><button>Instrumentation</button><button>Agglomeration</button><button>Hyperthreading</button></div>
+  <div class="explain">Slide 1-25: instrumentation modifies the code to collect information. Sampling interrupts the running program periodically to see which function is executing.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="2">
+  <p class="prompt">Which two PCAM steps are platform specific?</p>
+  <div class="options">
+    <button>Partitioning and communication</button>
+    <button>Agglomeration and mapping</button>
+    <button>Partitioning and mapping</button>
+    <button>Communication and agglomeration</button>
+  </div>
+  <div class="explain">Slide 2-4: partitioning and communication are algorithm specific; agglomeration and mapping are platform specific.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="80" data-tol="0.01">
+  <p class="prompt">PCAM agglomeration for a machine with 8 compute nodes: roughly how many groups does the rule of thumb suggest?</p>
+  <div class="explain">Slide 2-4: about one order of magnitude more groups than compute nodes, so about 8 · 10 = 80.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="40000" data-tol="0.5">
+  <p class="prompt">PCAM convolution example with a 3 × 3 kernel and one task per pixel. Using the count on slide 2-10 that leaves out each pixel's own value, what is totalComm for a 100 × 50 image?</p>
+  <div class="explain">totalComm = 8 · IMGX · IMGY = 8 · 100 · 50 = 40 000. Each pixel's task needs its 8 neighbours. Counting the pixel itself as well gives the slide's other figure, 9 · IMGX · IMGY.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="3">
+  <p class="prompt">Each video frame passes through decode, filter and encode stages, with different frames in different stages at once. Which decomposition pattern is this?</p>
+  <div class="options">
+    <button>Task parallelism (D1)</button>
+    <button>Geometric decomposition (D3)</button>
+    <button>Pipeline decomposition (D5)</button>
+    <button>Event-based coordination (D6)</button>
+  </div>
+  <div class="explain">Slides 2-35, 2-36: a pipeline is an assembly line, with items flowing through stages that each apply one operation. Data flow, regular: D5.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="4">
+  <p class="prompt">Tasks decide only at run time which other tasks to send messages to. Which decomposition pattern fits?</p>
+  <div class="options">
+    <button>Task parallelism (D1)</button>
+    <button>Geometric decomposition (D3)</button>
+    <button>Pipeline decomposition (D5)</button>
+    <button>Event-based coordination (D6)</button>
+  </div>
+  <div class="explain">Slide 2-40: D1 to D5 have a fixed communication flow. When tasks decide about communication at run time, event-based decomposition is needed.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="208" data-tol="0.01" data-show="208 ms">
+  <p class="prompt">A pipeline has M = 5 uniform stages of t = 2 ms each and processes N = 100 items. What is the total time, in ms?</p>
+  <div class="explain">(N + M − 1) · t = 104 · 2 = 208 ms. Slide 2-39.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="4.81" data-tol="0.02">
+  <p class="prompt">Same pipeline. What is its speedup over doing all stages for every item one after another?</p>
+  <div class="explain">N · M / (N + M − 1) = 500 / 104 ≈ 4.81, close to M = 5. Slide 2-39.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="8" data-tol="0.01" data-show="8 ms">
+  <p class="prompt">Same pipeline. What is its latency, in ms?</p>
+  <div class="explain">(M − 1) · t = 4 · 2 = 8 ms: the time until all stages have input. Slides 2-37, 2-39.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="1">
+  <p class="prompt">Which category does the fork/join pattern belong to?</p>
+  <div class="options">
+    <button>Globally sequential, locally parallel</button>
+    <button>Globally parallel, locally sequential</button>
+    <button>Globally parallel, locally parallel</button>
+    <button>Globally sequential, locally sequential</button>
+  </div>
+  <div class="explain">Slide 2-41: GSLP contains fork/join and loop parallelism. GPLS contains SPMD, MPMD, master-worker and map-reduce.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="2">
+  <p class="prompt">What weakness of the master-worker pattern do the slides name?</p>
+  <div class="options">
+    <button>Workers cannot balance their load</button>
+    <button>The master can become a bottleneck</button>
+    <button>It needs heterogeneous hardware platforms</button>
+    <button>It needs one program per node</button>
+  </div>
+  <div class="explain">Slide 2-45: master-worker is good for implicit load balancing, but the master can be a bottleneck.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="4095" data-tol="0.01">
+  <p class="prompt">Parallel quicksort with fork/join: N = 2<sup>20</sup> items, THRES = 2<sup>8</sup>. How many extra tasks are created?</p>
+  <div class="explain">T(N) = N / THRES − 1 = 2<sup>12</sup> − 1 = 4095. Slide 2-51.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="4">
+  <p class="prompt">According to the table on slide 2-53, which program structure pattern is <em>not</em> suitable for pipeline decomposition?</p>
+  <div class="options"><button>Fork/join</button><button>SPMD</button><button>MPMD</button><button>Master-worker</button></div>
+  <div class="explain">Slide 2-53: master-worker, map-reduce and loop parallelism have no tick in the pipeline column. SPMD, MPMD and fork/join support all six patterns.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="10" data-tol="0.5" data-show="10%">
+  <p class="prompt">Prefix-sum with the doubling algorithm on N − 1 CPUs, for N = 1024. What is the efficiency, in percent?</p>
+  <div class="explain">efficiency = 1 / ⌈lg N⌉ = 1 / 10, so 10%. Slide 2-31.</div>
+</div>
+
+<p class="score" data-quiz-score>0 of 0 answered.</p>
+
+<hr>
+<h2>After the test</h2>
+<p>Write down every question you missed and the slide it cites. Reread those slides tonight, not the whole deck. Then tell your teacher (the agent) in the chat your score and the misses.</p>
+<p>Seminar tasks to redo on a blank page before tomorrow: Task 1 in <a href="0002-gustafson-barsis-ants-elephants.html">lesson 2</a>, Tasks 2 and 3 in <a href="0003-exercise-sheet-tasks-2-3.html">lesson 3</a>.</p>
+</main>
+<script src="../assets/quiz.js"></script>
+</body>
+</html>

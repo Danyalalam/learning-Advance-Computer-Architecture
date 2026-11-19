@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ACA cram sheet: test 19.11.2026</title>
+<style>
+  @page { size: A4; margin: 13mm 14mm; }
+  :root { --ink:#1f1d1a; --muted:#6b655c; --accent:#8a3324; --tint:#f5f0e4; --rule:#d9d1c1; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:#fff; color:var(--ink); font:9.6pt/1.38 "Iowan Old Style", Palatino, Georgia, serif; }
+  main { max-width: 190mm; margin: 0 auto; padding: 8mm 4mm; }
+  h1 { font-size: 19pt; font-weight: 400; margin: 0 0 1mm; }
+  h2 { font-size: 12.5pt; font-weight: 600; color: var(--accent); margin: 5mm 0 1.5mm; padding-bottom: 0.8mm; border-bottom: 1.5px solid var(--accent); break-after: avoid; }
+  h3 { font-size: 10pt; margin: 3mm 0 1mm; break-after: avoid; }
+  p { margin: 1mm 0; }
+  .sub { color: var(--muted); margin-bottom: 2mm; }
+  table { border-collapse: collapse; width: 100%; margin: 1.5mm 0; break-inside: avoid; }
+  th, td { text-align: left; vertical-align: top; padding: 0.9mm 1.6mm; border-bottom: 0.5px solid var(--rule); }
+  th { border-bottom: 1px solid var(--ink); font-size: 8.8pt; }
+  td.f { font-style: italic; white-space: nowrap; }
+  .box { background: var(--tint); border-left: 3px solid var(--accent); padding: 1.6mm 2.6mm; margin: 2mm 0; break-inside: avoid; }
+  .trap { border: 1px solid var(--accent); padding: 1.6mm 2.6mm; margin: 2mm 0; break-inside: avoid; }
+  .trap b:first-child { color: var(--accent); }
+  .cols { columns: 2; column-gap: 6mm; }
+  .cols > * { break-inside: avoid; }
+  ul, ol { margin: 1mm 0; padding-left: 5mm; }
+  li { margin: 0.4mm 0; }
+  .ex { color: var(--muted); }
+  .ans { font-size: 8.8pt; }
+  .page { break-before: page; }
+  sub, sup { line-height: 0; }
+  @media screen { body { background: #fffdf8; } }
+</style>
+</head>
+<body>
+<main>
+
+<h1>ACA cram sheet</h1>
+<p class="sub">Moodle test 19.11.2026 · 21 minutes · slide sets 1 and 2 + Exercise Sheet 1 · notation as in the slides: α = parallelizable fraction, N = CPUs, lg = log₂</p>
+
+<div class="box"><b>Your hour:</b> 0–35 min read sections 1–6 slowly, doing each example in your head · 35–50 min self-test on the last page, covering the answers · 50–60 min reread whatever you missed. At the start of the test, write the boxed formulas on scrap paper.</div>
+
+<div class="trap"><b>Traps.</b> (1) "x% sequential" → α = 1 − x. (2) Sequential program → Amdahl; parallel program on N CPUs → Gustafson. (3) Different CPU speeds → compare times, not speedups. (4) Strong scaling is the hard one. (5) Threads ≤ hardware cores. (6) P + C = algorithm, A + M = platform. (7) GPU per SM = SIMD, whole GPU = MIMD. (8) Moodle numbers: give 2–3 decimals; try a comma if a dot is rejected.</div>
+
+<h2>1 · Measuring performance (set 1)</h2>
+<table>
+<tr><th>Quantity</th><th>Formula</th><th>Example / note</th></tr>
+<tr><td>Speedup</td><td class="f">t<sub>seq</sub> / t<sub>par</sub></td><td>120 s → 30 s gives 4. N does not appear. <span class="ex">1-11</span></td></tr>
+<tr><td>Efficiency</td><td class="f">speedup / N = t<sub>seq</sub> / (N · t<sub>par</sub>)</td><td>4 on 8 CPUs gives 50%. Average share of time a node is busy. <span class="ex">1-14</span></td></tr>
+<tr><td>Linear speedup</td><td class="f">speedup = N</td><td>Efficiency 100%. <span class="ex">1-14</span></td></tr>
+<tr><td>Super-linear</td><td class="f">speedup &gt; N</td><td>Efficiency &gt; 100%. Cause: a different algorithm, e.g. a search that finds the item early. <span class="ex">1-19</span></td></tr>
+<tr><td>Weak scaling eff.</td><td class="f">t<sub>seq</sub> / t′<sub>par</sub></td><td>t′<sub>par</sub> = time for an N-times bigger problem on N CPUs. 10 s → 12.5 s gives 80%. <span class="ex">1-22</span></td></tr>
+<tr><td>Strong scaling eff.</td><td class="f">t<sub>seq</sub> / (N · t<sub>par</sub>)</td><td>Same as efficiency. <b>The hardest one to improve.</b> <span class="ex">1-23</span></td></tr>
+</table>
+<p><b>DES example (1-20):</b> keys 0 … 2<sup>56</sup>−1, 2 CPUs each take half. Key = 2<sup>55</sup>: sequential needs 2<sup>55</sup>+1 tries, CPU 2 finds it on try 1 → speedup 2<sup>55</sup>+1, efficiency ≈ 2<sup>54</sup>. Key = 2: both need 3 tries → speedup 1.</p>
+<p><b>Fair speedup (1-13):</b> same hardware and software, similar conditions, and t<sub>seq</sub> from the <b>fastest known</b> sequential program, not the parallel one run on 1 CPU. <b>Not objective (1-12):</b> it depends on the programmer, compiler, compiler switches, OS, filesystem and time of day.</p>
+
+<h2>2 · The two laws</h2>
+<div class="box">
+<b>Amdahl (1967), fixed problem size:</b> &nbsp; speedup = 1 / ((1 − α) + α / N) &nbsp;·&nbsp; N → ∞: speedup → 1 / (1 − α) &nbsp;·&nbsp; time: t<sub>par</sub> = T · ((1 − α) + α / N)<br>
+<b>Gustafson-Barsis (1988), problem grows with N:</b> &nbsp; speedup = (1 − α) + N · α &nbsp;·&nbsp; efficiency = (1 − α) / N + α ≥ α &nbsp;·&nbsp; t<sub>seq</sub> = (1 − α)T + NαT
+</div>
+<table>
+<tr><th>Wording in the question</th><th>Law</th><th>α is a fraction of…</th></tr>
+<tr><td>"A <b>sequential</b> application … x% must run sequentially … accelerate it"</td><td>Amdahl</td><td>the sequential (1-CPU) run</td></tr>
+<tr><td>"A <b>parallel</b> application running on N CPUs spends x% of its time sequentially"</td><td>Gustafson-Barsis</td><td>the parallel (N-CPU) run</td></tr>
+</table>
+<div class="cols">
+<p><b>Amdahl, α = 0.9, N = 10:</b> 1 / (0.1 + 0.09) = <b>5.26</b>; limit 10.</p>
+<p><b>Barlas 1.4:</b> 20% sequential (α = 0.8), want 3× → 0.2 + 0.8/N = 1/3 → <b>N = 6</b>. Want 5× → limit is exactly 5 → <b>impossible</b>.</p>
+<p><b>Gustafson, Barlas 1.8 (Sheet Task 1):</b> 10 CPUs, 15% sequential (α = 0.85): 0.15 + 10 · 0.85 = <b>8.65</b> → one CPU must be 8.65× faster.</p>
+<p><b>Both are wrong (1-37):</b> they assume zero communication overhead. Lesson: there is room for optimism, and simple models predict performance before building.</p>
+</div>
+
+<h3>Ants vs elephants (1-31, 1-32) and Barlas 1.6</h3>
+<p>CPU A is r = T<sub>B</sub> / T<sub>A</sub> times faster than B. N<sub>B</sub> cheap CPUs vs one A: speedup = 1 / ((1 − α) r + α r / N<sub>B</sub>); limit 1 / ((1 − α) r). The ants <b>never win if r ≥ 1 / (1 − α)</b> (α = 0.9, r = 10 → tie at best).</p>
+<p><b>Machines with different CPUs → compare TIMES</b> with t<sub>par</sub> = T((1 − α) + α/N). Barlas 1.6, α = 0.95: X (4 CPUs, 1 h): 0.2875 h ≈ 17 min. Y (16 CPUs, 2 h): 2 · 0.109 = 0.219 h ≈ <b>13 min → buy Y</b>.</p>
+
+<h2>3 · Set 1 concepts</h2>
+<div class="cols">
+<table>
+<tr><th>Flynn (1-5)</th><th>Meaning, example</th></tr>
+<tr><td>SISD</td><td>1 instruction, 1 data. Simple sequential machine; most modern CPUs are <i>not</i> this.</td></tr>
+<tr><td>SIMD</td><td>1 instruction on many data. Vector processors; GPU at the level of one SM / SIMD unit.</td></tr>
+<tr><td>MISD</td><td>"An oddity".</td></tr>
+<tr><td>MIMD</td><td>Most versatile. Multicore machines, including GPUs as a whole.</td></tr>
+</table>
+<table>
+<tr><th>CPU (1-7)</th><th>GPU</th></tr>
+<tr><td>Large caches, data reused</td><td>Small caches, data used once</td></tr>
+<tr><td>Decoding + prediction hardware</td><td>Big data volume</td></tr>
+<tr><td>Pipelined execution</td><td>Simple logic, simple ALUs</td></tr>
+</table>
+<p><b>Trends (1-6):</b> more cores + SIMD instructions + bigger caches (Intel x86, Xeon Phi); heterogeneous CPU+GPU in one package (AMD APU). <b>Milestones (1-17):</b> 2005 first dual-core (AMD Athlon), 2007 first heterogeneous CPU (Cell BE), mid-2000s GPGPU; GPUs give bulk power and high FLOP/Watt.</p>
+<p><b>Thread (1-16):</b> a sequence of instructions of a process, scheduled separately by the OS. Hyperthreading: 8 threads on a quad-core.</p>
+<p><b>Profilers (1-25):</b> <i>instrumentation</i> modifies the code (usually recompile); <i>sampling</i> interrupts periodically to see which function runs. Tool: valgrind/callgrind.</p>
+<p><b>Experiment guidelines (1-27):</b> measure the whole run · average over many runs (+ std dev) · drop outliers but explain unfavourable results · many input sizes incl. production-typical · threads ≤ <b>hardware</b> cores, disable hyperthreading.</p>
+<p><b>Start from the sequential program (1-24):</b> find hot spots, potential speedup, check correctness.</p>
+</div>
+
+<h2>4 · PCAM (set 2, slides 3–11)</h2>
+<table>
+<tr><th>Step</th><th>What</th><th>Depends on</th></tr>
+<tr><td><b>P</b>artitioning</td><td>Split into as many tasks as possible: functional or domain (data) decomposition</td><td rowspan="2"><b>algorithm</b></td></tr>
+<tr><td><b>C</b>ommunication</td><td>Data volume between tasks → P + C give the <b>task dependency graph</b> (nodes = tasks, edges = volume)</td></tr>
+<tr><td><b>A</b>gglomeration</td><td>Group tasks to cut communication. Groups ≈ <b>10 ×</b> number of nodes</td><td rowspan="2"><b>platform</b></td></tr>
+<tr><td><b>M</b>apping</td><td>Assign groups to nodes: (a) load balance, (b) reduce communication</td></tr>
+</table>
+<p><b>Convolution example:</b> 1 task per pixel (IMGX · IMGY tasks, = "unroll the two outer loops"). totalComm = <b>8 · IMGX · IMGY</b> (8 neighbours), or 9 · IMGX · IMGY counting the pixel itself as in the code. Agglomerate into M strips: <b>2 · (M − 1)</b> one-way transfers of IMGY pixels each.</p>
+
+<h2>5 · Decomposition patterns (2-12)</h2>
+<table>
+<tr><th>Split the…</th><th>Linear / regular</th><th>Recursive / irregular</th></tr>
+<tr><td>functions</td><td><b>D1 Task parallelism</b>: tasks fixed a priori; game loop + barriers (all tasks finish a frame before the next); <i>no strong scalability</i></td><td><b>D2 Divide &amp; conquer</b>: split, recurse as new tasks if "big enough", merge; mergesort</td></tr>
+<tr><td>data</td><td><b>D3 Geometric</b>: arrays/matrices cut along dimensions; heat diffusion</td><td><b>D4 Recursive data</b>: trees, lists, graphs into elements; algorithm may change; like dynamic programming; prefix-sum</td></tr>
+<tr><td>data flow</td><td><b>D5 Pipeline</b>: assembly line; CPU instructions, signal processing, graphics, shell pipes; synchronous communication</td><td><b>D6 Event-based</b>: tasks decide communication at run time; event = time-stamped message</td></tr>
+</table>
+
+<h3>D3 geometric: heat diffusion, N × N cells, P nodes (Sheet Task 2)</h3>
+<p>Each cell reads its <b>4</b> neighbours. Symbols: t<sub>comp</sub> per cell update, t<sub>start</sub> message start-up latency, t<sub>comm</sub> per data item, full-duplex links, outer boundaries ignored.</p>
+<table>
+<tr><th></th><th>Cells per node</th><th>Computing</th><th>Communication</th></tr>
+<tr><td>1-D strips, k = N/P</td><td>k · N</td><td class="f">(N²/P) t<sub>comp</sub></td><td class="f">2 (t<sub>start</sub> + t<sub>comm</sub> N)</td></tr>
+<tr><td>2-D blocks, k = N/√P</td><td>k²</td><td class="f">(N²/P) t<sub>comp</sub></td><td class="f">4 (t<sub>start</sub> + t<sub>comm</sub> N/√P)</td></tr>
+</table>
+<div class="box"><b>1-D better ⇔ t<sub>start</sub> &gt; t<sub>comm</sub> · N · (1 − 2/√P)</b> &nbsp;(slide 2-25).
+Derivation: computing costs are equal and cancel → 2t<sub>s</sub> + 2t<sub>c</sub>N &lt; 4t<sub>s</sub> + 4t<sub>c</sub>N/√P → 2t<sub>c</sub>N − 4t<sub>c</sub>N/√P &lt; 2t<sub>s</sub> → divide by 2.
+<b>Intuition:</b> 1-D = 2 long messages, 2-D = 4 short ones. Expensive start-up → 1-D wins.</div>
+
+<h3>D4 prefix-sum (Sheet Task 3), S<sub>i</sub> = A<sub>0</sub> + … + A<sub>i</sub></h3>
+<table>
+<tr><th>Item</th><th>Answer</th></tr>
+<tr><td>3a: idea in 2 sentences</td><td>Recursive data structures (trees, lists, graphs) are broken into individual elements, each element or group assigned to its own compute node. The algorithm may be modified so operations can run concurrently, building bigger solutions from smaller ones like dynamic programming.</td></tr>
+<tr><td>3b: inner loop, step = 1</td><td><b>N − 1</b> (in general N − step)</td></tr>
+<tr><td>3c: inner loop, step = 2</td><td><b>N − 2</b></td></tr>
+<tr><td>3d: outer loop, N = 2<sup>k</sup></td><td><b>lg N</b> (step = 1, 2, 4, …, N/2)</td></tr>
+<tr><td>3e: total assignments</td><td>Σ<sub>i=0…lgN−1</sub>(N − 2<sup>i</sup>) = <b>N · lg N − N + 1</b> &nbsp;<span class="ex">(N = 16: 15+14+12+8 = 49)</span></td></tr>
+<tr><td>Complexities</td><td>sequential Θ(N); alternative Θ(N lg N): more work, but ⌈lg N⌉ parallel steps</td></tr>
+<tr><td>With N − 1 CPUs</td><td>speedup = (N − 1)/⌈lg N⌉, efficiency = 1/⌈lg N⌉</td></tr>
+<tr><td>With P CPUs</td><td>t<sub>par</sub> ≈ t<sub>c</sub>((N/P)(lg N − 1) + 1/P); speedup &gt; 1 needs P &gt; (N/(N−1))(lg N − 1) + 1/(N−1); N = 2<sup>20</sup> → <b>more than 19 CPUs</b></td></tr>
+</table>
+
+<h3>D5 pipeline: M stages, N items (2-37 to 2-39)</h3>
+<p>General: t<sub>total</sub> = (stages before the slowest) + N · t<sub>slowest</sub> + (stages after); rate = N / t<sub>total</sub>; latency = t<sub>0</sub> + … + t<sub>M−2</sub>. The slowest stage dominates.</p>
+<div class="box"><b>Uniform stages t:</b> total = (N + M − 1) · t · rate = N / ((N + M − 1) t) · latency = (M − 1) · t · speedup = N·M / (N + M − 1) ≈ M<br>
+<span class="ex">M = 5, t = 2 ms, N = 100 → total 208 ms, latency 8 ms, speedup 4.81</span></div>
+
+<h2>6 · Program structure patterns (2-41 to 2-53)</h2>
+<div class="cols">
+<p><b>GPLS</b> (globally parallel, locally sequential): SPMD, MPMD, master-worker, map-reduce.<br><b>GSLP</b> (globally sequential, locally parallel): fork/join, loop parallelism.</p>
+<p><b>SPMD:</b> one program; init → get unique ID (from 0; CUDA uses vector IDs) → run, path depends on ID → shut down.</p>
+<p><b>MPMD:</b> used when SPMD fails: memory too big for all nodes, or heterogeneous platforms. Same steps, different programs deployed. MPI supports both.</p>
+<p><b>Master-worker:</b> master hands out work, collects results, does I/O, talks to the user. Good for <b>implicit load balancing</b>; master can be a <b>bottleneck</b> → hierarchical version.</p>
+<p><b>Map-reduce:</b> master-worker variant (Google). Map = apply a function → partial results; reduce = combine them.</p>
+<p><b>Fork/join:</b> one parent thread spawns child tasks at run time; parent waits for children. <b>OpenMP</b>.</p>
+<p><b>Loop parallelism:</b> split loops via the loop variable; for migrating legacy code; limited scalability, low effort; <b>OpenMP</b>.</p>
+<p><b>Quicksort (fork/join):</b> extra tasks T(N) = N / THRES − 1. 2<sup>20</sup>, THRES 2<sup>10</sup> → 1023.</p>
+</div>
+<table>
+<tr><th>2-53</th><th>D1 Task</th><th>D2 D&amp;C</th><th>D3 Geom</th><th>D4 Rec.</th><th>D5 Pipe</th><th>D6 Event</th></tr>
+<tr><td>SPMD, MPMD, Fork/join</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td></tr>
+<tr><td>Master-worker</td><td>✓</td><td>✓</td><td>✓</td><td>✓</td><td></td><td></td></tr>
+<tr><td>Map-reduce</td><td></td><td>✓</td><td>✓</td><td>✓</td><td></td><td></td></tr>
+<tr><td>Loop parallelism</td><td></td><td>✓</td><td>✓</td><td></td><td></td><td></td></tr>
+</table>
+
+
+
+<h2 class="page">7 · Self-test (15 minutes, cover the answers)</h2>
+<ol>
+<li>t<sub>seq</sub> = 90 s, t<sub>par</sub> = 15 s on 8 CPUs. Speedup and efficiency?</li>
+<li>Amdahl, α = 0.6, N = 4. Speedup? Limit for N → ∞?</li>
+<li>A parallel program on 20 CPUs spends 10% of its time sequentially. Speedup?</li>
+<li>A sequential program is 10% sequential. How many CPUs for a speedup of 5?</li>
+<li>α = 0.8, CPU A is r = 5 times faster than B. Can any number of B CPUs beat one A?</li>
+<li>Pipeline M = 4 uniform stages, t = 3 ms, N = 50 items. Total time, latency, speedup?</li>
+<li>Prefix-sum code, N = 32. Inner loop at step 1? Outer loop runs? Total assignments?</li>
+<li>Fork/join quicksort, N = 2<sup>16</sup>, THRES = 2<sup>6</sup>. Extra tasks?</li>
+<li>Heat diffusion, N = 200, P = 25, t<sub>comm</sub> = 2. Above which t<sub>start</sub> is 1-D better?</li>
+<li>Prefix-sum on N − 1 CPUs, N = 256. Speedup and efficiency?</li>
+<li>Which PCAM steps are platform specific? Which produce the task dependency graph?</li>
+<li>Flynn class of a multicore CPU? Of one GPU streaming multiprocessor?</li>
+<li>Is fork/join GPLS or GSLP? Name a library that uses it.</li>
+<li>Which program structure patterns support all six decomposition patterns?</li>
+<li>Which decomposition pattern: (a) image cut into tiles, (b) tasks message each other based on run-time events, (c) recursive split of a sort?</li>
+<li>Why must t<sub>seq</sub> come from the fastest known sequential program?</li>
+</ol>
+
+<div class="box ans" style="margin-top:6mm"><b>Answers.</b>
+1: 6, 75%. ·
+2: 1/(0.4 + 0.15) = 1.82; limit 2.5. ·
+3: Gustafson, 0.1 + 20 · 0.9 = 18.1. ·
+4: 0.1 + 0.9/N = 0.2 → N = 9. ·
+5: limit 1/(0.2 · 5) = 1 → no, at best a tie. ·
+6: 53 · 3 = 159 ms; 9 ms; 200/53 = 3.77. ·
+7: 31; 5; 32 · 5 − 32 + 1 = 129. ·
+8: 2<sup>10</sup> − 1 = 1023. ·
+9: 2 · 200 · (1 − 2/5) = 240. ·
+10: 255/8 = 31.9; 1/8 = 12.5%. ·
+11: agglomeration + mapping; partitioning + communication. ·
+12: MIMD; SIMD. ·
+13: GSLP; OpenMP. ·
+14: SPMD, MPMD, fork/join. ·
+15: (a) D3 geometric, (b) D6 event-based, (c) D2 divide and conquer. ·
+16: otherwise a slow baseline inflates the speedup; compare against the best sequential solution, on the same platform.
+</div>
+
+<p class="ex" style="margin-top:4mm">Sources: H. Weber's slide sets ACA 2026W 01 and 02 (after G. Barlas, <i>Multicore &amp; GPU Programming</i>), Seminar Exercise Sheet 1, Barlas Ch. 1 exercises. Slide numbers are set-slide, e.g. 2-25.</p>
+</main>
+</body>
+</html>

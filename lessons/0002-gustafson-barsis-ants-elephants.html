@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 2: Gustafson-Barsis and ants versus elephants</title>
+<link rel="stylesheet" href="../assets/course.css">
+</head>
+<body>
+<main>
+<nav class="course">
+  <span>ACA · Lesson 2 of 6 before the test</span>
+  <a href="0001-speedup-efficiency-amdahl.html">← Lesson 1</a>
+  <a href="0005-pcam-and-decomposition-patterns.html">Lesson 2b →</a>
+  <a href="../reference/formula-sheet.html">Formula sheet</a>
+</nav>
+
+<p class="kicker">Slide set 1 · slides 31 to 37 · Exercise Sheet 1, Task 1</p>
+<h1>Gustafson-Barsis and ants versus elephants</h1>
+<p class="lede">After this lesson you can solve Task 1 of the exercise sheet (Barlas 1.8) and decide from the wording of a question which of the two laws to use.</p>
+
+<h2>Warm-up from memory</h2>
+<p>Before reading on, write Amdahl's formula on paper without looking it up. Then answer.</p>
+<div class="q" data-type="num" data-answer="3.33" data-tol="0.02">
+  <p class="prompt">A sequential program has α = 0.8. What speedup does Amdahl's law give on N = 8 CPUs?</p>
+  <div class="explain">1 / ((1 − 0.8) + 0.8 / 8) = 1 / (0.2 + 0.1) = 1 / 0.3 ≈ 3.33. Covered in <a href="0001-speedup-efficiency-amdahl.html">lesson 1</a>.</div>
+</div>
+
+<h2>The rebuttal: nobody keeps the problem the same size</h2>
+<p>Amdahl asks: "I have a fixed job. How much faster does it finish on N CPUs?" Gustafson and Barsis observed that real users do not behave like that. Give an ML team 8 GPUs instead of 1 and they do not train the same small model 8 times faster. They train a bigger model, or on more data, in the same wall-clock time. The problem grows with the machine. <a class="cite" href="../materials/ACA%202026W%2001%20Introduction.pdf#page=17">slide 1-33</a></p>
+<p>So they start from the other end: a <em>parallel</em> program that takes time T on N CPUs. For a fraction <strong>α</strong> of that time it runs on all N machines; for the remaining <strong>1 − α</strong> it runs sequentially. How long would one CPU need for the same work?</p>
+<p>The sequential part takes the same (1 − α)T. The parallel part was done by N machines for αT each, so one machine needs N times as long.</p>
+<div class="formula">
+  <span class="label">Gustafson-Barsis · slide 1-34</span>
+  t<sub>seq</sub> = (1 − α)T + N · α · T
+  &nbsp;&nbsp;⇒&nbsp;&nbsp;
+  speedup = <span class="frac"><span>t<sub>seq</sub></span><span>T</span></span> = (1 − α) + N · α
+</div>
+<div class="formula">
+  <span class="label">Efficiency · slide 1-34</span>
+  efficiency = <span class="frac"><span>speedup</span><span>N</span></span> = <span class="frac"><span>1 − α</span><span>N</span></span> + α
+</div>
+<p>There is no ceiling: the speedup is a straight line in N, and the efficiency never falls below α. Compare the two curves for the same α below. <a class="cite" href="../materials/ACA%202026W%2001%20Introduction.pdf#page=17">slide 1-34</a></p>
+<div class="explorer" data-explorer="both"></div>
+
+<div class="note"><strong>Same symbol, different measurement.</strong> In Amdahl's law α is a fraction of the <em>sequential</em> run time. In Gustafson-Barsis it is a fraction of the <em>parallel</em> run time. That is why the same program does not contradict itself under the two laws.</div>
+
+<h3>Which law does a question want?</h3>
+<table>
+<tr><th>The wording says</th><th>Use</th></tr>
+<tr><td>"A <em>sequential</em> application with an x% sequential part is to be accelerated…"</td><td>Amdahl</td></tr>
+<tr><td>"A <em>parallel</em> application running on N CPUs spends x% of its total time in sequential execution…"</td><td>Gustafson-Barsis</td></tr>
+</table>
+<p>Neither is "right": both assume zero communication overhead, which is too optimistic. <a class="cite" href="../materials/ACA%202026W%2001%20Introduction.pdf#page=19">slide 1-37</a></p>
+
+<h2>Ants versus elephants</h2>
+<p>Should you buy one powerful CPU (an elephant, type A) or many cheap ones (ants, type B)? Let the program take T<sub>A</sub> on A and T<sub>B</sub> on one B. Then A is <strong>r = T<sub>B</sub> / T<sub>A</sub></strong> times faster. Apply Amdahl to N<sub>B</sub> ants and compare against the elephant:</p>
+<div class="formula">
+  <span class="label">Speedup of N<sub>B</sub> cheap CPUs over one CPU of type A · slide 1-31</span>
+  speedup = <span class="frac"><span>T<sub>A</sub></span><span>(1 − α)T<sub>B</sub> + αT<sub>B</sub> / N<sub>B</sub></span></span>
+  = <span class="frac"><span>1</span><span>(1 − α) r + α r / N<sub>B</sub></span></span>
+</div>
+<div class="formula">
+  <span class="label">With infinitely many ants · slide 1-32</span>
+  limit = <span class="frac"><span>1</span><span>(1 − α) r</span></span>
+  &nbsp;&nbsp;so the ants never win if&nbsp;&nbsp; r ≥ <span class="frac"><span>1</span><span>1 − α</span></span>
+</div>
+<p>Example from the slide: with α = 0.9 and r = 10 the limit is exactly 1, so even infinitely many ants only tie with one elephant. <a class="cite" href="../materials/ACA%202026W%2001%20Introduction.pdf#page=16">slide 1-32</a></p>
+
+<h2>Practice</h2>
+<p>Pen and paper first. Two decimals are enough.</p>
+
+<div class="q" data-type="num" data-answer="6.6" data-tol="0.02">
+  <p class="prompt">A parallel program runs on N = 8 CPUs and spends α = 0.8 of its time on all machines. What is its speedup according to Gustafson-Barsis?</p>
+  <div class="explain">(1 − 0.8) + 8 · 0.8 = 0.2 + 6.4 = 6.6. Same α and N as the warm-up, where Amdahl gave 3.33.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="82.5" data-tol="0.5" data-show="82.5%">
+  <p class="prompt">Same program. What is its efficiency, in percent?</p>
+  <div class="explain">6.6 / 8 = 0.825, or (1 − 0.8) / 8 + 0.8 = 0.025 + 0.8 = 0.825. It can never drop below α = 80%.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="2">
+  <p class="prompt">"A parallel job running on 16 CPUs spends 10% of its total time in sequential code. What is the speedup over one CPU?" Which law fits?</p>
+  <div class="options">
+    <button>Amdahl's law applies here</button>
+    <button>Gustafson-Barsis' law applies here</button>
+    <button>Neither law applies here</button>
+    <button>Both give identical results</button>
+  </div>
+  <div class="explain">The percentage is measured on the parallel run, on N CPUs. That is the Gustafson-Barsis starting point: speedup = 0.1 + 16 · 0.9 = 14.5.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="8.65" data-tol="0.02">
+  <p class="prompt">Exercise Sheet 1, Task 1 (Barlas 1.8): a parallel application running on 10 CPUs spends 15% of its total time in sequential execution. How many times faster must a single CPU be to run it completely sequentially in the same total time?</p>
+  <div class="explain">N = 10, α = 0.85. One ordinary CPU needs t<sub>seq</sub> = (1 − α)T + NαT = 0.15T + 8.5T = 8.65T. To finish in T, the single CPU must be 8.65 times faster. That is exactly the Gustafson-Barsis speedup.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="2.29" data-tol="0.02">
+  <p class="prompt">A program has α = 0.95. CPU A is r = 4 times faster than CPU B. What speedup do N<sub>B</sub> = 16 CPUs of type B achieve over one CPU of type A?</p>
+  <div class="explain">1 / ((1 − 0.95) · 4 + 0.95 · 4 / 16) = 1 / (0.2 + 0.2375) = 1 / 0.4375 ≈ 2.29.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="5" data-tol="0.01">
+  <p class="prompt">Same program and CPUs. What is the upper bound on that speedup with unlimited CPUs of type B?</p>
+  <div class="explain">1 / ((1 − α) r) = 1 / (0.05 · 4) = 5.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="4">
+  <p class="prompt">Barlas 1.6: an application has a 5% non-parallelizable part. Machine X has 4 CPUs, each running the application alone in 1 hour. Machine Y has 16 CPUs, each running it alone in 2 hours. Which machine finishes first, and in roughly what time?</p>
+  <div class="options">
+    <button>Machine X, about seventeen minutes</button>
+    <button>Machine X, about thirteen minutes</button>
+    <button>Machine Y, about seventeen minutes</button>
+    <button>Machine Y, about thirteen minutes</button>
+  </div>
+  <div class="explain">α = 0.95, Amdahl times. X: 1 h · (0.05 + 0.95 / 4) = 0.2875 h ≈ 17 min. Y: 2 h · (0.05 + 0.95 / 16) = 0.21875 h ≈ 13 min. The ants win here because r = 2 is far below 1 / (1 − α) = 20.</div>
+</div>
+
+<p class="score" data-quiz-score>0 of 0 answered.</p>
+
+<hr>
+<h2>Read next</h2>
+<p>Primary source: <a href="../materials/ACA%202026W%2001%20Introduction.pdf#page=16">slide set 1, slides 31 to 37</a>. Compare the Gustafson-Barsis curves on slides 35 and 36 with Amdahl's on slides 29 and 30. For the full argument, read the Gustafson-Barsis section in Barlas, chapter 1.</p>
+<p>All formulas are on the <a href="../reference/formula-sheet.html">formula sheet</a>.</p>
+<p><strong>Stuck or curious?</strong> Ask your teacher (the agent) in the chat. Tell it your score and which questions you missed. Next comes <a href="0005-pcam-and-decomposition-patterns.html">lesson 2b</a>: the foundations of slide set 2, then lesson 3.</p>
+</main>
+<script src="../assets/quiz.js"></script>
+<script src="../assets/speedup-explorer.js"></script>
+</body>
+</html>

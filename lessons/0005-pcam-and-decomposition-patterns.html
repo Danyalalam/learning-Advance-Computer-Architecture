@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lesson 2b: PCAM and the decomposition patterns</title>
+<link rel="stylesheet" href="../assets/course.css">
+<style>
+  .grids { display: flex; gap: 1.5rem; flex-wrap: wrap; justify-content: center; margin: 1rem 0; }
+  .grids figure { margin: 0; text-align: center; font-size: 0.85rem; color: var(--muted); }
+  .grids svg { width: 12rem; height: auto; }
+</style>
+</head>
+<body>
+<main>
+<nav class="course">
+  <span>ACA · Lesson 2b: do this before lesson 3</span>
+  <a href="0002-gustafson-barsis-ants-elephants.html">← Lesson 2</a>
+  <a href="0003-exercise-sheet-tasks-2-3.html">Lesson 3 →</a>
+  <a href="../reference/formula-sheet.html">Formula sheet</a>
+</nav>
+
+<p class="kicker">Slide set 2 · slides 1 to 22</p>
+<h1>PCAM and the decomposition patterns</h1>
+<p class="lede">Slide set 1 asked how much faster a parallel program gets. Slide set 2 asks how to split a program into parallel pieces in the first place. After this lesson you can name the four PCAM steps, sort a problem into one of six patterns, and read the setup of Task 2.</p>
+
+<h2>You already know this from ML</h2>
+<p>When a model is too slow on one GPU, you choose how to split it:</p>
+<ul>
+<li><strong>Data parallel</strong>: every GPU gets a different slice of the batch. You split the <em>data</em>.</li>
+<li><strong>Pipeline parallel</strong>: GPU 1 runs layers 1 to 10, GPU 2 layers 11 to 20, and batches flow through. You split the <em>flow</em>.</li>
+<li>Either way, the GPUs must exchange gradients or activations. That <em>communication</em> costs time and decides whether the split pays off.</li>
+</ul>
+<p>Slide set 2 is the general theory behind those choices.</p>
+
+<h2>Words you need</h2>
+<table>
+<tr><th>Term</th><th>Meaning here</th></tr>
+<tr><td>Task</td><td>A piece of the computation that can run on its own CPU.</td></tr>
+<tr><td>Node</td><td>A compute node: one CPU or core that runs tasks.</td></tr>
+<tr><td>Communication</td><td>Data one task needs from another. Within a node it is cheap; between nodes it costs time.</td></tr>
+<tr><td>Task dependency graph</td><td>Tasks drawn as circles, with an arrow wherever data flows from one task to another.</td></tr>
+</table>
+
+<h2>PCAM: four steps to design a parallel program</h2>
+<p>Ian Foster's method, from 1995. <a class="cite" href="../materials/ACA%202026W%2002%20Program%20design.pdf#page=2">slides 2-3, 2-4</a></p>
+<table>
+<tr><th>Step</th><th>What you do</th><th>Depends on</th></tr>
+<tr><td><strong>P</strong>artitioning</td><td>Break the computation into <em>as many</em> small tasks as possible, by function (functional decomposition) or by data (domain decomposition).</td><td rowspan="2">the algorithm</td></tr>
+<tr><td><strong>C</strong>ommunication</td><td>Work out how much data flows between those tasks. Steps 1 and 2 together give the task dependency graph.</td></tr>
+<tr><td><strong>A</strong>gglomeration</td><td>Group tasks to cut communication. Rule of thumb: about ten times more groups than nodes.</td><td rowspan="2">the platform</td></tr>
+<tr><td><strong>M</strong>apping</td><td>Assign groups to nodes so the load is balanced and communication is low.</td></tr>
+</table>
+<p>Steps 1 and 2 split as finely as possible. Steps 3 and 4 then group the pieces back up to fit the machine you actually have.</p>
+
+<h3>The slides' example: image convolution</h3>
+<p>You know convolution from CNNs. Each output pixel is a weighted sum of a 3 × 3 neighbourhood of input pixels, using the kernel weights. A blur kernel has all nine weights equal to 1/9. <a class="cite" href="../materials/ACA%202026W%2002%20Program%20design.pdf#page=3">slides 2-5 to 2-8</a></p>
+<ol>
+<li><strong>Partitioning:</strong> one task per output pixel, so IMGX · IMGY tasks. This is what "unrolling the two outer loops" on slide 2-8 means: every loop iteration becomes its own task. <a class="cite" href="../materials/ACA%202026W%2002%20Program%20design.pdf#page=5">slide 2-9</a></li>
+<li><strong>Communication:</strong> each pixel task needs its 8 neighbours' values, so totalComm = 8 · IMGX · IMGY. Counting the pixel's own value as well, as the code does, gives 9 · IMGX · IMGY. <a class="cite" href="../materials/ACA%202026W%2002%20Program%20design.pdf#page=5">slide 2-10</a></li>
+<li><strong>Agglomeration:</strong> group the pixels into M vertical strips, IMGX / M columns wide. Inside a strip, neighbours are on the same core and communicate for free. Only the strip edges talk: 2 · (M − 1) one-way transfers of one column (IMGY pixels) each. <a class="cite" href="../materials/ACA%202026W%2002%20Program%20design.pdf#page=6">slide 2-11</a></li>
+<li><strong>Mapping:</strong> one strip per core.</li>
+</ol>
+<p>Agglomeration shrank communication from about 8 values per pixel to two columns per strip boundary. That is the whole point of the step.</p>
+
+<h2>The six decomposition patterns</h2>
+<p>PCAM is general but a lot of work. Decomposition patterns are ready-made answers to "which parts can run at the same time?" Pick the row by <em>what</em> you split, and the column by its shape. <a class="cite" href="../materials/ACA%202026W%2002%20Program%20design.pdf#page=6">slide 2-12</a></p>
+<table>
+<tr><th>You split…</th><th>Linear / regular</th><th>Recursive / irregular</th></tr>
+<tr><td>the functions</td><td><strong>D1</strong> Task parallelism</td><td><strong>D2</strong> Divide and conquer</td></tr>
+<tr><td>the data</td><td><strong>D3</strong> Geometric decomposition</td><td><strong>D4</strong> Recursive data decomposition</td></tr>
+<tr><td>the flow of data</td><td><strong>D5</strong> Pipeline</td><td><strong>D6</strong> Event-based coordination</td></tr>
+</table>
+
+<h3>D1 Task parallelism · slides 2-13, 2-14</h3>
+<p>The tasks are fixed in advance (a priori). The slides' example is a game loop: read input, draw the screen, play sounds and run the AI, each as its own task. A <strong>barrier</strong> after each function makes every task wait until all four have finished the current frame, so no task races ahead into the next one. Weakness: four functions give at most four tasks, so it does not scale strongly.</p>
+
+<h3>D2 Divide and conquer · slides 2-15 to 2-19</h3>
+<p>Split a problem into subproblems, solve them recursively, merge the results. In parallel, each subproblem becomes a new task, but only while it is "big enough for a split"; small ones are solved sequentially. Example: mergesort, whose call graph is a tree of tasks.</p>
+
+<h3>D3 Geometric decomposition · slides 2-20 to 2-25</h3>
+<p>The data sits in a regular structure such as an array or matrix. Cut it along one or more dimensions and give each piece to a task. Lesson 3's Task 2 is about exactly this, so the details are below.</p>
+
+<h3>D4 Recursive data decomposition · slides 2-26 to 2-34</h3>
+<p>For trees, lists and graphs, which do not cut neatly. Break the structure into single elements, one per node, often after changing the algorithm. Example: prefix-sum, in lesson 3's Task 3.</p>
+
+<h3>D5 Pipeline · slides 2-35 to 2-39</h3>
+<p>An assembly line: each item passes through stages, and different items are in different stages at once. Total time is set by the slowest stage.</p>
+
+<h3>D6 Event-based coordination · slide 2-40</h3>
+<p>D1 to D5 have a communication flow known in advance. When tasks decide only at run time whom to message, you need events: time-stamped messages such as requests, responses or state changes.</p>
+
+<h2>D3 up close: the setup of Task 2</h2>
+<p><strong>The problem.</strong> A metal plate is modelled as an N × N grid of cells, each holding a temperature. In every time step each cell's new temperature is computed from its old value and its <strong>four</strong> direct neighbours: up, down, left and right. <a class="cite" href="../materials/ACA%202026W%2002%20Program%20design.pdf#page=10">slide 2-20</a></p>
+<div class="formula">u′[i, j] = u[i, j] + δt · (u[i−1, j] + u[i+1, j] + u[i, j−1] + u[i, j+1] − 4u[i, j]) / h²</div>
+<p>You do not need to understand the physics. What matters is that each cell reads its four neighbours, so a cell on the edge of a node's region needs values that live on another node.</p>
+
+<p><strong>Two ways to cut the grid among P nodes.</strong> <a class="cite" href="../materials/ACA%202026W%2002%20Program%20design.pdf#page=11">slide 2-21</a></p>
+<div class="grids">
+  <figure>
+    <svg viewBox="0 0 160 160" role="img" aria-label="Grid cut into 4 vertical strips">
+      <rect x="0" y="0" width="160" height="160" fill="#f5f0e4" stroke="#1f1d1a"/>
+      <rect x="40" y="0" width="40" height="160" fill="#e9c9bf"/>
+      <line x1="40" y1="0" x2="40" y2="160" stroke="#1f1d1a"/>
+      <line x1="80" y1="0" x2="80" y2="160" stroke="#1f1d1a"/>
+      <line x1="120" y1="0" x2="120" y2="160" stroke="#1f1d1a"/>
+      <text x="60" y="84" font-size="11" text-anchor="middle" fill="#1f1d1a">k × N</text>
+    </svg>
+    <figcaption>1-D: P strips, k = N / P wide<br>2 neighbours, borders N long</figcaption>
+  </figure>
+  <figure>
+    <svg viewBox="0 0 160 160" role="img" aria-label="Grid cut into 4 by 4 square blocks">
+      <rect x="0" y="0" width="160" height="160" fill="#f5f0e4" stroke="#1f1d1a"/>
+      <rect x="40" y="40" width="40" height="40" fill="#e9c9bf"/>
+      <line x1="40" y1="0" x2="40" y2="160" stroke="#1f1d1a"/>
+      <line x1="80" y1="0" x2="80" y2="160" stroke="#1f1d1a"/>
+      <line x1="120" y1="0" x2="120" y2="160" stroke="#1f1d1a"/>
+      <line x1="0" y1="40" x2="160" y2="40" stroke="#1f1d1a"/>
+      <line x1="0" y1="80" x2="160" y2="80" stroke="#1f1d1a"/>
+      <line x1="0" y1="120" x2="160" y2="120" stroke="#1f1d1a"/>
+      <text x="60" y="64" font-size="11" text-anchor="middle" fill="#1f1d1a">k × k</text>
+    </svg>
+    <figcaption>2-D: √P × √P blocks, k = N / √P wide<br>4 neighbours, borders k long</figcaption>
+  </figure>
+</div>
+<p>Both pictures use P = 16 for the blocks and P = 4 for the strips only to keep them readable. In both cuts every node gets the same number of cells, N² / P, so the computing work is identical. The difference is communication:</p>
+<ul>
+<li><strong>1-D:</strong> 2 messages per node per time step, each a whole column of N cells.</li>
+<li><strong>2-D:</strong> 4 messages per node per time step, each a shorter edge of k = N / √P cells.</li>
+</ul>
+<p>The formulas pretend every node is an interior node with a full set of neighbours. That is the slides' remark "if outer boundaries would not exist". <a class="cite" href="../materials/ACA%202026W%2002%20Program%20design.pdf#page=12">slides 2-23, 2-24</a></p>
+
+<p><strong>The cost symbols</strong> on slide 2-22, as in a network or GPU interconnect: <a class="cite" href="../materials/ACA%202026W%2002%20Program%20design.pdf#page=11">slide 2-22</a></p>
+<table>
+<tr><th>Symbol</th><th>Meaning</th><th>Analogy</th></tr>
+<tr><td>t<sub>comp</sub></td><td>cost of updating one cell</td><td>one FLOP-ish unit of work</td></tr>
+<tr><td>t<sub>start</sub></td><td>fixed start-up cost of any message</td><td>kernel launch or network latency</td></tr>
+<tr><td>t<sub>comm</sub></td><td>cost per data item in a message</td><td>1 / bandwidth</td></tr>
+</table>
+<p>So one message of m items costs t<sub>start</sub> + t<sub>comm</sub> · m. Full-duplex links mean sending and receiving happen at the same time, so you count only the messages a node sends. Now you have everything you need for Task 2 in lesson 3.</p>
+
+<h2>Practice</h2>
+
+<div class="q" data-type="mcq" data-answer="3">
+  <p class="prompt">What is the correct order of the PCAM steps?</p>
+  <div class="options">
+    <button>Partition, agglomerate, communicate, map</button>
+    <button>Communicate, partition, map, agglomerate</button>
+    <button>Partition, communicate, agglomerate, map</button>
+    <button>Map, partition, communicate, agglomerate</button>
+  </div>
+  <div class="explain">P, C, A, M: partitioning, communication, agglomeration, mapping. Slide 2-3.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="1">
+  <p class="prompt">Which PCAM steps together produce the task dependency graph?</p>
+  <div class="options">
+    <button>Partitioning and communication</button>
+    <button>Agglomeration and mapping</button>
+    <button>Communication and mapping</button>
+    <button>Partitioning and agglomeration</button>
+  </div>
+  <div class="explain">Slide 2-3: partitioning gives the nodes of the graph (tasks), communication gives the edges (data volume).</div>
+</div>
+
+<div class="q" data-type="num" data-answer="307200" data-tol="0.5">
+  <p class="prompt">PCAM partitioning of a convolution on a 640 × 480 image, one task per pixel. How many tasks?</p>
+  <div class="explain">IMGX · IMGY = 640 · 480 = 307 200.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="2880" data-tol="0.5">
+  <p class="prompt">The same image, agglomerated into M = 4 vertical strips. Following slide 2-11, how many pixels in total are communicated between the cores?</p>
+  <div class="explain">2 · (M − 1) = 6 one-way transfers, each one column of IMGY = 480 pixels: 6 · 480 = 2880. Compare with 8 · 640 · 480 ≈ 2.5 million before agglomeration.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="4">
+  <p class="prompt">In the task-parallel game loop, what are the barriers for?</p>
+  <div class="options">
+    <button>They split each function into subtasks</button>
+    <button>They send data between neighbouring nodes</button>
+    <button>They let tasks skip finished frames</button>
+    <button>They make tasks wait for each other</button>
+  </div>
+  <div class="explain">A barrier holds every task until all tasks reach it, so all four finish frame n before any starts frame n + 1. Slide 2-14.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="2">
+  <p class="prompt">Mergesort splits the array in half, sorts both halves recursively, then merges them. Which pattern is this?</p>
+  <div class="options">
+    <button>Task parallelism (D1)</button>
+    <button>Divide and conquer (D2)</button>
+    <button>Geometric decomposition (D3)</button>
+    <button>Pipeline decomposition (D5)</button>
+  </div>
+  <div class="explain">Slides 2-17 to 2-19 use mergesort as the D2 example: recursive split, solve, merge.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="3">
+  <p class="prompt">An N × N matrix is cut into horizontal bands, one per node. Which pattern is this?</p>
+  <div class="options">
+    <button>Divide and conquer (D2)</button>
+    <button>Recursive data decomposition (D4)</button>
+    <button>Geometric decomposition (D3)</button>
+    <button>Event-based coordination (D6)</button>
+  </div>
+  <div class="explain">Regular data (a matrix) split along a dimension: D3. Slide 2-20.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="4" data-tol="0.01">
+  <p class="prompt">In the heat diffusion problem, how many neighbouring cells does each cell's update read?</p>
+  <div class="explain">Four: up, down, left and right (slide 2-20). The convolution example used eight, because of its 3 × 3 kernel.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="3600" data-tol="0.5">
+  <p class="prompt">N = 120 cells per side, P = 4 nodes, 1-D strips. How many cells does each node update per time step?</p>
+  <div class="explain">N² / P = 14 400 / 4 = 3600. The strip is k = 30 columns wide and 120 rows tall.</div>
+</div>
+
+<div class="q" data-type="num" data-answer="30" data-tol="0.01">
+  <p class="prompt">Now N = 120 and P = 16 with a 2-D split. How many cells long is each border message?</p>
+  <div class="explain">k = N / √P = 120 / 4 = 30. A 1-D split would send columns of N = 120 cells instead, but only 2 of them rather than 4.</div>
+</div>
+
+<div class="q" data-type="mcq" data-answer="1">
+  <p class="prompt">Starting any message is very expensive, but each extra data item is nearly free. Which split should you expect to win?</p>
+  <div class="options">
+    <button>1-D, it sends fewer messages</button>
+    <button>2-D, it sends fewer messages</button>
+    <button>1-D, it sends shorter messages</button>
+    <button>2-D, it computes fewer cells</button>
+  </div>
+  <div class="explain">A large t<sub>start</sub> favours fewer messages: 1-D sends 2 per node, 2-D sends 4. Task 2 in lesson 3 turns this into an exact inequality.</div>
+</div>
+
+<p class="score" data-quiz-score>0 of 0 answered.</p>
+
+<hr>
+<h2>Read next</h2>
+<p>Primary source: <a href="../materials/ACA%202026W%2002%20Program%20design.pdf#page=2">slide set 2, slides 3 to 22</a>. Look at the PCAM pictures on slides 9 and 11 and the 1-D and 2-D grids on slide 21; they should all make sense now. Foster's online book, <a href="http://www.mcs.anl.gov/~itf/dbpp/text/book.html"><em>Designing and Building Parallel Programs</em></a>, chapter 2, is the original PCAM source.</p>
+<p><strong>Stuck or curious?</strong> Ask your teacher (the agent) in the chat. Then continue with <a href="0003-exercise-sheet-tasks-2-3.html">lesson 3</a>.</p>
+</main>
+<script src="../assets/quiz.js"></script>
+</body>
+</html>
